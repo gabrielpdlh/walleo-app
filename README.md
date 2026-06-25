@@ -1,46 +1,72 @@
-# TAP Eventos
+# Walleo-Events
 
-Frontend em fase de discovery e arquitetura para o MVP de carteira digital para eventos.
+Frontend para a plataforma de eventos da Walleo. Este projeto está em fase de discovery e arquitetura para o MVP de uma carteira digital para eventos.
 
-## Status atual
+## Visão Geral do Projeto
 
-- AIOX configurado no projeto
-- base Next.js inicial criada
-- documentacao inicial de requisitos e arquitetura de frontend criada
-- nenhuma feature de produto implementada ainda
+Este repositório contém o frontend da aplicação, construído com Next.js e TypeScript. O projeto foi inicializado e estruturado com uma série de commits granulares para garantir um histórico claro e organizado desde o início.
 
-## Documentacao principal
+## Status Atual
 
-- [docs/architecture/index.md](./docs/architecture/index.md)
-- [docs/architecture/frontend-architecture.md](./docs/architecture/frontend-architecture.md)
-- [docs/specs/mvp-demo-spec.md](./docs/specs/mvp-demo-spec.md)
-- [docs/discovery/frontend-requirements.md](./docs/discovery/frontend-requirements.md)
-- [docs/discovery/open-questions.md](./docs/discovery/open-questions.md)
-- [docs/discovery/mvp-demo-brief.md](./docs/discovery/mvp-demo-brief.md)
-- [docs/discovery/mvp-demo-plan.md](./docs/discovery/mvp-demo-plan.md)
-- [docs/discovery/backend-handoff-initial-needs.md](./docs/discovery/backend-handoff-initial-needs.md)
-- [docs/discovery/initial-screens.md](./docs/discovery/initial-screens.md)
-- [docs/discovery/required-endpoints.md](./docs/discovery/required-endpoints.md)
-- [docs/discovery/initial-domain-model.md](./docs/discovery/initial-domain-model.md)
+- **Repositório Inicializado**: O projeto foi versionado com Git, com uma estrutura de commits iniciais bem definida.
+- **Base do Código**: A estrutura inicial do Next.js foi configurada.
+- **Configuração**: Ferramentas de qualidade de código como ESLint e TypeScript estão configuradas.
+- **Documentação**: A documentação inicial de arquitetura, requisitos e especificações do MVP foi adicionada.
+- **Features**: Nenhuma feature de produto foi implementada ainda.
 
-## Ambiente local
+## Começando
 
-Use a versao de Node definida em `.nvmrc`.
+Para rodar o projeto localmente, siga os passos abaixo.
 
-```bash
-fnm use
-npm install
-npm run dev
+1.  **Use a versão correta do Node.js**:
+    ```bash
+    nvm use # ou fnm use
+    ```
+
+2.  **Instale as dependências**:
+    ```bash
+    npm install
+    ```
+
+3.  **Inicie o servidor de desenvolvimento**:
+    ```bash
+    npm run dev
+    ```
+    Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
+
+## Scripts Disponíveis
+
+-   `npm run dev`: Inicia o servidor de desenvolvimento.
+-   `npm run build`: Compila a aplicação para produção.
+-   `npm run start`: Inicia um servidor de produção.
+-   `npm run lint`: Executa o linter (ESLint) para identificar problemas no código.
+-   `npm run typecheck`: Executa o verificador de tipos do TypeScript.
+
+## Estrutura do Projeto
+
+A estrutura de pastas principal é a seguinte:
+
+```
+/
+├── app/            # Páginas e layouts da aplicação (Next.js App Router)
+├── docs/           # Documentação do projeto (arquitetura, specs, etc.)
+├── public/         # Arquivos estáticos (imagens, fontes)
+├── .github/        # Configurações do GitHub (ex: agentes de IA)
+├── AGENTS.md       # Instruções para agentes de IA
+├── next.config.ts  # Configuração do Next.js
+└── package.json    # Dependências e scripts do projeto
 ```
 
-## Validacoes
+## Histórico de Commits Iniciais
 
-```bash
-npm run lint
-npm run typecheck
-npm run build
-```
+O projeto foi inicializado com os seguintes commits:
 
-## Proximo passo recomendado
+1.  `chore: Initialize .gitignore with project-specific ignores`
+2.  `feat: Add initial project configuration files`
+3.  `feat: Add initial application boilerplate`
+4.  `docs: Add initial project documentation and AI agent instructions`
+5.  `chore: Add environment example and GitHub configuration`
 
-Refinar as questoes em aberto e transformar a arquitetura em backlog inicial antes de iniciar implementacao funcional.
+## Próximos Passos
+
+O próximo passo recomendado é refinar as questões em aberto na documentação e transformar a arquitetura em um backlog inicial antes de começar a implementação funcional.
