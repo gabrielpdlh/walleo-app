@@ -15,6 +15,9 @@ type Step = "form" | "pix" | "success" | "failed";
 interface RechargeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Nome completo e CPF mascarado do pagador (fixos do usuário da demo). */
+  customerName: string;
+  cpfMasked: string;
   /** Chamado quando a recarga é confirmada, com o novo saldo (em centavos). */
   onConfirmed: (newBalanceCents: number) => void;
 }
@@ -31,22 +34,14 @@ function qrSrc(url: string | null): string | null {
   return `data:image/png;base64,${url}`;
 }
 
-function maskCPF(value: string): string {
-  const d = value.replace(/\D/g, "").slice(0, 11);
-  return d
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d)/, "$1.$2")
-    .replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-}
-
 export function RechargeModal({
   isOpen,
   onClose,
+  customerName,
+  cpfMasked,
   onConfirmed,
 }: RechargeModalProps) {
   const [step, setStep] = useState<Step>("form");
-  const [name, setName] = useState("");
-  const [cpf, setCpf] = useState("");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,11 +100,7 @@ export function RechargeModal({
     }
     setLoading(true);
     try {
-      const result = await createRecharge({
-        amountCents,
-        cpf,
-        name,
-      });
+      const result = await createRecharge({ amountCents });
       setRecharge(result);
       setStep("pix");
       startPolling(result.topUp.id);
@@ -135,7 +126,7 @@ export function RechargeModal({
   function handleClose() {
     closedRef.current = true;
     stopPolling();
-    // Reseta para a próxima abertura (mantém nome/CPF por conveniência).
+    // Reseta para a próxima abertura.
     setStep("form");
     setError(null);
     setRecharge(null);
@@ -158,32 +149,15 @@ export function RechargeModal({
       {step === "form" && (
         <div className="space-y-4">
           <p className="text-gray-600">
-            Preencha os dados para gerar um PIX e adicionar saldo à sua carteira.
+            Informe o valor para gerar um PIX e adicionar saldo à sua carteira.
           </p>
 
-          <div>
-            <label className="mb-2 block text-sm font-medium text-neutral-800">
-              Nome completo
-            </label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Maria da Silva"
-              className="h-14 w-full rounded-2xl border border-black/10 bg-white px-4 text-base text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950/30 focus:ring-4 focus:ring-neutral-950/6"
-            />
-          </div>
-
-          <div>
-            <label className="mb-2 block text-sm font-medium text-neutral-800">
-              CPF
-            </label>
-            <input
-              value={cpf}
-              onChange={(e) => setCpf(maskCPF(e.target.value))}
-              inputMode="numeric"
-              placeholder="000.000.000-00"
-              className="h-14 w-full rounded-2xl border border-black/10 bg-white px-4 text-base text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950/30 focus:ring-4 focus:ring-neutral-950/6"
-            />
+          <div className="rounded-2xl border border-black/10 bg-neutral-50 px-4 py-3">
+            <p className="font-mono text-[0.62rem] uppercase tracking-[0.2em] text-neutral-500">
+              Pagador
+            </p>
+            <p className="mt-1 text-sm font-semibold text-neutral-900">{customerName}</p>
+            <p className="text-sm text-neutral-600">CPF {cpfMasked}</p>
           </div>
 
           <div>

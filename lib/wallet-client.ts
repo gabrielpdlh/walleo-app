@@ -52,8 +52,6 @@ export interface CreateRechargeResult {
 
 export async function createRecharge(input: {
   amountCents: number;
-  cpf: string;
-  name: string;
 }): Promise<CreateRechargeResult> {
   const res = await fetch("/api/recharge", {
     method: "POST",

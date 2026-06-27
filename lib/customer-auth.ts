@@ -37,16 +37,15 @@ export function verifyAccessCode(code: string): boolean {
   return safeEqual((code ?? "").trim(), ACCESS_CODE);
 }
 
-/** walletId determinístico a partir do nome (mesma pessoa → mesma carteira). */
-export function walletIdForName(name: string): string | null {
-  const slug = (name ?? "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "") // remove acentos
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  if (!slug) return null;
-  return `wal_${slug}`;
+// Identidade FIXA do cliente da demo (o login pede só o código).
+export const CUSTOMER_NAME = process.env.CUSTOMER_NAME ?? "Gabriel Santos Padilha";
+export const CUSTOMER_CPF = process.env.CUSTOMER_CPF ?? "06472394504";
+export const CUSTOMER_WALLET_ID = process.env.CUSTOMER_WALLET_ID ?? "wal_gabriel";
+
+/** CPF mascarado mostrando só os 3 primeiros dígitos: 064.***.***-**. */
+export function cpfMasked(): string {
+  const d = CUSTOMER_CPF.replace(/\D/g, "");
+  return `${d.slice(0, 3)}.***.***-**`;
 }
 
 function sign(payload: string): string {

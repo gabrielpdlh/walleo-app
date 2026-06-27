@@ -35,6 +35,7 @@ export default function HomePage() {
   const [availableCents, setAvailableCents] = useState(0);
   const [reservedCents, setReservedCents] = useState(0);
   const [name, setName] = useState<string | null>(null);
+  const [cpfMasked, setCpfMasked] = useState("");
   const [merchants, setMerchants] = useState<MerchantSummary[]>([]);
   const [loadingMerchants, setLoadingMerchants] = useState(true);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -48,6 +49,7 @@ export default function HomePage() {
         return;
       }
       setName(session.name);
+      setCpfMasked(session.cpfMasked);
       const [wallet, items] = await Promise.all([
         fetchWallet(),
         fetchMerchants().catch(() => []),
@@ -79,7 +81,7 @@ export default function HomePage() {
           <header className="relative z-10 flex items-center justify-between rounded-[32px] border border-black/8 bg-white/70 px-5 py-4 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-7">
             <div>
               <p className="font-mono text-[0.7rem] font-medium tracking-[0.28em] text-neutral-500 uppercase">
-                Olá, {name}
+                Olá, {name.split(" ")[0]}
               </p>
               <h1 className="mt-2 text-xl font-semibold tracking-[-0.04em] sm:text-2xl">
                 Minha Carteira
@@ -204,6 +206,8 @@ export default function HomePage() {
 
       <RechargeModal
         isOpen={isRechargeModalOpen}
+        customerName={name}
+        cpfMasked={cpfMasked}
         onClose={() => setIsRechargeModalOpen(false)}
         onConfirmed={(newAvailableCents) => setAvailableCents(newAvailableCents)}
       />

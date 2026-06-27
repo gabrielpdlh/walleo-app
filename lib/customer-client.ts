@@ -1,30 +1,28 @@
-/** Helpers de cliente (browser) para a sessão do CLIENTE (login simples). */
+/** Helpers de cliente (browser) para a sessão do CLIENTE (login só com código). */
 
 export interface CustomerSession {
   name: string;
+  cpfMasked: string;
 }
 
-export async function customerLogin(
-  name: string,
-  code: string,
-): Promise<CustomerSession> {
+export async function customerLogin(code: string): Promise<CustomerSession> {
   const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, code }),
+    body: JSON.stringify({ code }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error ?? "Falha no login.");
-  return { name: data.name };
+  return { name: data.name, cpfMasked: data.cpfMasked };
 }
 
-/** Sessão atual (nome) ou null — nunca lança. */
+/** Sessão atual (nome + CPF mascarado) ou null — nunca lança. */
 export async function fetchCustomerSession(): Promise<CustomerSession | null> {
   try {
     const res = await fetch("/api/auth/session", { cache: "no-store" });
     if (!res.ok) return null;
     const data = await res.json();
-    return { name: data.name };
+    return { name: data.name, cpfMasked: data.cpfMasked };
   } catch {
     return null;
   }

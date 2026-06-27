@@ -4,13 +4,13 @@ import {
   createPixTopUp,
   toConfrapixDate,
 } from "@/lib/confrapix";
-import { isValidCPF, onlyDigits } from "@/lib/money";
-import { getSessionWalletId } from "@/lib/customer-auth";
+import { onlyDigits } from "@/lib/money";
 import {
-  createTopUpRow,
-  getOrProvisionWallet,
-  updateConsumerIdentity,
-} from "@/db/wallet";
+  CUSTOMER_CPF,
+  CUSTOMER_NAME,
+  getSessionWalletId,
+} from "@/lib/customer-auth";
+import { createTopUpRow, getOrProvisionWallet } from "@/db/wallet";
 
 const MIN_CENTS = 100; // R$ 1,00
 const MAX_CENTS = 5_000_00; // R$ 5.000,00
@@ -22,15 +22,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
-  let body: { amountCents?: number; cpf?: string; name?: string };
+  let body: { amountCents?: number };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "JSON inválido." }, { status: 400 });
   }
 
-  const { amountCents, cpf, name } = body;
-
+  const { amountCents } = body;
   if (!Number.isInteger(amountCents) || (amountCents ?? 0) < MIN_CENTS) {
     return NextResponse.json(
       { error: "Valor mínimo de recarga é R$ 1,00." },
@@ -43,27 +42,20 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (!name || name.trim().length < 2) {
-    return NextResponse.json({ error: "Nome é obrigatório." }, { status: 400 });
-  }
-  if (!cpf || !isValidCPF(cpf)) {
-    return NextResponse.json({ error: "CPF inválido." }, { status: 400 });
-  }
 
+  // Nome + CPF são FIXOS do usuário da demo (cliente só informa o valor).
+  const customerName = CUSTOMER_NAME;
+  const customerDocument = onlyDigits(CUSTOMER_CPF);
   const expiresAt = new Date(Date.now() + EXPIRATION_MINUTES * 60_000);
   const callbackUrl = process.env.CONFRAPIX_CALLBACK_URL || undefined;
 
   try {
     await getOrProvisionWallet(walletId);
-    await updateConsumerIdentity(walletId, {
-      fullName: name.trim(),
-      cpf: onlyDigits(cpf),
-    });
 
     const tx = await createPixTopUp({
       amountCents: amountCents!,
-      customerName: name.trim(),
-      customerDocument: onlyDigits(cpf),
+      customerName,
+      customerDocument,
       description: "Recarga de carteira Walleo",
       expirationDate: toConfrapixDate(expiresAt),
       callbackUrl,
@@ -72,8 +64,8 @@ export async function POST(req: Request) {
     const topUp = await createTopUpRow({
       walletId,
       amountCents: amountCents!,
-      customerName: name.trim(),
-      customerDocument: onlyDigits(cpf),
+      customerName,
+      customerDocument,
       providerTransactionId: String(tx.id),
       providerUuid: tx.uuid,
       txid: tx.pix?.txid ?? null,

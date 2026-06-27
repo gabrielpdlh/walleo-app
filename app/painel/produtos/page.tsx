@@ -167,42 +167,44 @@ export default function PainelProdutosPage() {
             </p>
           ) : (
             products.map((p) => (
-              <div key={p.id} className="flex items-center gap-4 rounded-[24px] border border-black/8 bg-white/80 p-4">
-                <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-black/5">
-                  {p.imageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-semibold text-neutral-950">
-                    {p.name}
-                    {!p.active && (
-                      <span className="ml-2 rounded-full bg-neutral-200 px-2 py-0.5 text-[0.7rem] font-medium text-neutral-600">
-                        inativo
-                      </span>
+              <div key={p.id} className="flex flex-col gap-3 rounded-[24px] border border-black/8 bg-white/80 p-4 sm:flex-row sm:items-center sm:gap-4">
+                <div className="flex min-w-0 flex-1 items-center gap-4">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-black/5">
+                    {p.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.imageUrl} alt={p.name} className="h-full w-full object-cover" />
                     )}
-                  </p>
-                  <p className="mt-0.5 text-sm text-neutral-600">{formatBRL(p.priceCents)}</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-semibold text-neutral-950">
+                      {p.name}
+                      {!p.active && (
+                        <span className="ml-2 rounded-full bg-neutral-200 px-2 py-0.5 text-[0.7rem] font-medium text-neutral-600">
+                          inativo
+                        </span>
+                      )}
+                    </p>
+                    <p className="mt-0.5 text-sm text-neutral-600">{formatBRL(p.priceCents)}</p>
+                  </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex items-center gap-2 sm:shrink-0">
                   <button
                     onClick={() => toggleActive(p)}
                     disabled={busyId === p.id}
-                    className="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-black/5 disabled:opacity-40"
+                    className="flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-black/5 disabled:opacity-40 sm:flex-none"
                   >
                     {p.active ? "Desativar" : "Ativar"}
                   </button>
                   <button
                     onClick={() => openEdit(p)}
-                    className="rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-black/5"
+                    className="flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-black/5 sm:flex-none"
                   >
                     Editar
                   </button>
                   <button
                     onClick={() => remove(p)}
                     disabled={busyId === p.id}
-                    className="rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-40"
+                    className="flex-1 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-40 sm:flex-none"
                   >
                     Excluir
                   </button>

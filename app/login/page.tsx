@@ -11,7 +11,6 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +33,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      await customerLogin(name, code);
+      await customerLogin(code);
       router.replace("/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Falha no login.");
@@ -81,29 +80,11 @@ export default function LoginPage() {
                   Entre para acessar sua carteira.
                 </h2>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
-                  Use seu nome e o código de acesso do evento. Sua carteira e
-                  pedidos te acompanham em qualquer aparelho.
+                  Informe o código de acesso do evento para entrar.
                 </p>
               </div>
 
               <form onSubmit={handleLogin} className="mt-6 space-y-4">
-                <div>
-                  <label
-                    htmlFor="login-name"
-                    className="mb-2 block text-sm font-medium text-neutral-800"
-                  >
-                    Seu nome
-                  </label>
-                  <input
-                    id="login-name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Gabriel"
-                    autoComplete="name"
-                    className="h-14 w-full rounded-2xl border border-black/10 bg-white px-4 text-base text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950/30 focus:ring-4 focus:ring-neutral-950/6"
-                  />
-                </div>
                 <div>
                   <label
                     htmlFor="login-code"
