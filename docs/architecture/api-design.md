@@ -1,17 +1,14 @@
-# Endpoints Necessarios para as Telas Iniciais
+# Design da API (Full-stack Next.js)
 
 ## Objetivo
 
-Mapear os endpoints necessarios para sustentar as telas iniciais do MVP, alinhando frontend e backend ao fluxo exigido para a demo.
+Este documento descreve o design da API para o projeto Walleo-Events. Como estamos usando uma arquitetura Next.js full-stack, estes endpoints serão implementados como API Routes dentro de `app/api/`.
 
-## Premissas
+Este documento serve como a fonte da verdade para a implementação do backend.
 
-- o recorte atual e o MVP de apresentacao;
-- a recarga via PIX e obrigatoria;
-- o backend pode comecar enxuto, mas precisa suportar o fluxo principal real;
-- os endpoints abaixo sao a base funcional minima para a demo.
+## Endpoints da API
 
-## Convencoes sugeridas
+### Convenções
 
 - prefixo base: `/api/v1`
 - respostas JSON
@@ -507,6 +504,52 @@ Se precisarmos reduzir ao minimo indispensavel, os endpoints P0 sao:
 9. `POST /api/v1/charges/:chargeId/confirm`
 10. `GET /api/v1/wallets/me/history`
 
-## Recomendacao
+## Modelo de Domínio e Regras de Negócio
 
-O backend deve implementar primeiro os endpoints P0 e devolver exemplos reais de payload para que o frontend possa sair do mock rapidamente.
+Esta seção detalha as entidades e regras de negócio que a API deve seguir.
+
+### Modelo de Domínio
+
+As entidades centrais da aplicação são:
+
+- `event`
+- `consumer`
+- `consumerWallet`
+- `merchant`
+- `charge`
+- `ledgerEntry`
+- `transactionHistoryItem`
+
+Para cada entidade, devemos definir:
+- Nomes e identificadores
+- Relações entre entidades
+- Status válidos
+- Campos obrigatórios vs. opcionais
+
+### Regras de Negócio do Ledger
+
+A lógica do ledger é o coração do sistema e deve seguir estas regras:
+
+- O saldo do frequentador é derivado do ledger ou de um saldo materializado.
+- Toda recarga gera uma entrada positiva no ledger do frequentador.
+- Todo pagamento gera uma saída no ledger do frequentador.
+- Todo pagamento gera um crédito lógico para o estabelecimento.
+- O saldo não pode ficar negativo.
+- Toda transação precisa ter rastreabilidade e timestamp.
+
+**Questões de implementação a serem definidas:**
+- Como identificar a idempotência de cobranças e pagamentos?
+- Quais status de cobrança e transação existem?
+- Como representar cancelamento, expiração e falha?
+
+### Modelagem de Estados e Erros
+
+A API deve modelar os seguintes cenários de erro desde o início:
+
+- Saldo insuficiente
+- Cobrança expirada
+- Cobrança cancelada
+- Cobrança já paga
+- Falha de processamento
+- Recurso não encontrado
+- Usuário não autorizado
