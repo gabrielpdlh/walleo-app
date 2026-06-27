@@ -1,148 +1,237 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image"; // Import Next.js Image component
 
-const highlights = [
+// Re-using the same components
+import { Modal } from "@/components/ui/Modal";
+
+const establishments = [
   {
-    title: "Entrada mais fluida",
-    description:
-      "Reduza filas com um acesso digital pensado para credenciamento e consumo no mesmo ambiente.",
+    id: "bar-principal",
+    name: "Bar Principal",
+    category: "Bebidas",
+    image: "https://picsum.photos/seed/bar1/600/400",
   },
   {
-    title: "Experiencia centralizada",
-    description:
-      "Saldo, recarga, extrato e pagamentos organizados em uma unica jornada.",
+    id: "food-truck-burgers",
+    name: "Food Truck de Burgers",
+    category: "Comida",
+    image: "https://picsum.photos/seed/truck1/600/400",
   },
   {
-    title: "Operacao profissional",
-    description:
-      "Fluxo seguro para eventos que precisam de controle, agilidade e suporte assistido.",
+    id: "palco-sunset",
+    name: "Bar Palco Sunset",
+    category: "Bebidas",
+    image: "https://picsum.photos/seed/sunset/600/400",
+  },
+  {
+    id: "loja-oficial",
+    name: "Loja Oficial",
+    category: "Produtos",
+    image: "https://picsum.photos/seed/store1/600/400",
   },
 ];
 
-const steps = [
-  "Acesse sua area pelo link ou codigo de convite.",
-  "Valide sua entrada em poucos segundos.",
-  "Use a carteira durante todo o evento.",
-];
+const UserIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    {...props}
+  >
+    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
 
-export default function Home() {
+export default function HomePage() {
+  const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
+  const [credit, setCredit] = useState(100);
+  const [rechargeAmount, setRechargeAmount] = useState("");
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
+    if (isAuthenticated !== "true") {
+      router.push("/welcome");
+    }
+    const storedCredit = localStorage.getItem('userCredit');
+    if (storedCredit) {
+        setCredit(parseFloat(storedCredit));
+    } else {
+        localStorage.setItem('userCredit', '100');
+    }
+  }, [router]);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("userCredit");
+    router.push("/welcome");
+  };
+
+  const handleRecharge = () => {
+    const amount = parseFloat(rechargeAmount);
+    if (!isNaN(amount) && amount > 0) {
+      const newCredit = credit + amount;
+      setCredit(newCredit);
+      localStorage.setItem('userCredit', newCredit.toString());
+      setRechargeAmount("");
+      setIsRechargeModalOpen(false);
+    } else {
+      alert("Por favor, insira um valor válido.");
+    }
+  };
+
   return (
-    <main className="min-h-screen text-neutral-950">
-      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-6 lg:px-8">
-        <header className="rounded-[32px] border border-black/8 bg-white/70 px-5 py-5 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-7">
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+    <>
+      <main className="min-h-screen text-neutral-950">
+        <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-6 sm:px-6 lg:px-8">
+          <header className="relative z-10 flex items-center justify-between rounded-[32px] border border-black/8 bg-white/70 px-5 py-4 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-7">
             <div>
               <p className="font-mono text-[0.7rem] font-medium tracking-[0.28em] text-neutral-500 uppercase">
-                TAP Eventos
+                Walleo Eventos
               </p>
-              <h1 className="mt-3 max-w-2xl text-3xl font-semibold tracking-[-0.05em] text-balance sm:text-5xl">
-                A carteira digital que organiza a experiencia do seu evento.
+              <h1 className="mt-2 text-xl font-semibold tracking-[-0.04em] sm:text-2xl">
+                Minha Carteira
               </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-neutral-600 sm:text-base">
-                Uma plataforma mais limpa, segura e direta para entrada,
-                recarga via PIX e pagamentos durante o evento.
-              </p>
             </div>
-
-            <div className="rounded-[24px] border border-emerald-900/10 bg-emerald-50/80 px-4 py-3 text-left sm:min-w-56 sm:text-right">
-              <p className="font-mono text-[0.68rem] uppercase tracking-[0.22em] text-emerald-800/70">
-                Disponivel
-              </p>
-              <p className="mt-1 text-sm font-semibold text-emerald-950">
-                Acesso por convite
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <section className="mt-5 grid flex-1 gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-[32px] border border-black/8 bg-[rgba(255,255,255,0.82)] p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-7">
-            <div className="rounded-[28px] border border-black/6 bg-neutral-950 px-5 py-6 text-white sm:px-6 sm:py-7">
-              <p className="font-mono text-[0.68rem] font-medium tracking-[0.24em] uppercase text-white/56">
-                Inicio
-              </p>
-              <h2 className="mt-3 max-w-xl text-2xl leading-tight font-semibold tracking-[-0.04em] text-balance sm:text-[2.1rem]">
-                Entre no ambiente do evento com uma experiencia simples e
-                profissional.
-              </h2>
-              <p className="mt-3 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
-                A nova tela de inicio concentra a apresentacao do produto e
-                direciona o participante para a area interna de acesso.
-              </p>
-            </div>
-
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/convite"
-                className="flex h-14 items-center justify-center rounded-2xl bg-neutral-950 px-6 text-base font-semibold text-white transition hover:bg-neutral-800"
-              >
-                Entrar
-              </Link>
-              <a
-                href="#como-funciona"
-                className="flex h-14 items-center justify-center rounded-2xl border border-black/10 bg-white px-6 text-base font-semibold text-neutral-900 transition hover:bg-neutral-50"
-              >
-                Como funciona
-              </a>
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              {highlights.map((item) => (
-                <div
-                  key={item.title}
-                  className="rounded-[24px] border border-black/8 bg-white/80 p-4"
-                >
-                  <p className="text-sm font-semibold text-neutral-950">
-                    {item.title}
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-neutral-600">
-                    {item.description}
-                  </p>
+            <div className="flex items-center gap-4">
+                <div className="rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-right">
+                    <p className="font-mono text-[0.68rem] uppercase tracking-[0.22em] text-neutral-500">
+                        Saldo
+                    </p>
+                    <p className="text-sm font-semibold text-neutral-950">
+                        R$ {credit.toFixed(2)}
+                    </p>
                 </div>
-              ))}
+                <div className="relative">
+                    <button
+                        onClick={() => setIsProfileDropdownOpen((prev) => !prev)}
+                        className="flex h-12 w-12 items-center justify-center rounded-full border border-black/8 bg-white/80"
+                    >
+                        <UserIcon className="h-6 w-6 text-neutral-700" />
+                    </button>
+                    {isProfileDropdownOpen && (
+                        <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl border border-black/8 bg-white py-2 shadow-xl backdrop-blur-xl">
+                        <div className="px-4 py-2">
+                            <p className="text-sm text-neutral-600">Logado como</p>
+                            <p className="font-semibold text-neutral-800">visitante@walleo.com.br</p>
+                        </div>
+                        <div className="my-2 h-px bg-black/10" />
+                        <a
+                            href="#"
+                            className="block px-4 py-2 text-sm text-neutral-700 hover:bg-black/5"
+                        >
+                            Meu Perfil
+                        </a>
+                        <a
+                            href="#"
+                            className="block px-4 py-2 text-sm text-neutral-700 hover:bg-black/5"
+                        >
+                            Extrato
+                        </a>
+                        <div className="my-2 h-px bg-black/10" />
+                        <button
+                            onClick={handleLogout}
+                            className="w-full text-left block px-4 py-2 text-sm text-red-600 hover:bg-black/5"
+                        >
+                            Sair
+                        </button>
+                        </div>
+                    )}
+                </div>
             </div>
-          </div>
+          </header>
 
-          <aside className="grid gap-4">
-            <div
-              id="como-funciona"
-              className="rounded-[32px] border border-black/8 bg-white/76 p-5 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-xl sm:p-6"
-            >
-              <p className="font-mono text-[0.68rem] tracking-[0.24em] text-neutral-500 uppercase">
-                Fluxo de acesso
-              </p>
-              <div className="mt-4 grid gap-3">
-                {steps.map((step, index) => (
-                  <div
-                    key={step}
-                    className="rounded-[24px] border border-black/7 bg-neutral-50 p-4"
-                  >
-                    <p className="font-mono text-[0.68rem] tracking-[0.22em] text-neutral-500 uppercase">
-                      {String(index + 1).padStart(2, "0")}
-                    </p>
-                    <p className="mt-3 text-sm leading-6 text-neutral-700">
-                      {step}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <section className="mt-5 flex-1">
+            <div className="rounded-[32px] border border-black/8 bg-[rgba(255,255,255,0.82)] p-5 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-7 h-full">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="font-mono text-[0.68rem] font-medium tracking-[0.24em] uppercase text-neutral-500">
+                            Consumo no evento
+                        </p>
+                        <h2 className="mt-3 text-2xl leading-tight font-semibold tracking-[-0.04em] text-balance sm:text-[2rem]">
+                            Estabelecimentos
+                        </h2>
+                    </div>
+                    <button
+                        onClick={() => setIsRechargeModalOpen(true)}
+                        className="flex h-14 items-center justify-center rounded-2xl bg-neutral-950 px-6 text-base font-semibold text-white transition hover:bg-neutral-800"
+                    >
+                        Recarregar
+                    </button>
+                </div>
 
-            <div className="rounded-[32px] border border-black/8 bg-neutral-950 p-5 text-white shadow-[0_24px_80px_rgba(15,23,42,0.16)] sm:p-6">
-              <p className="font-mono text-[0.68rem] tracking-[0.24em] text-white/55 uppercase">
-                Atendimento assistido
-              </p>
-              <p className="mt-4 text-lg font-semibold tracking-[-0.03em] text-balance">
-                Se o participante tiver qualquer divergencia no acesso, a equipe
-                do evento pode concluir o processo internamente.
-              </p>
-              <p className="mt-3 text-sm leading-6 text-white/70">
-                Isso protege a operacao e evita bloquear credenciamento,
-                recarga ou consumo.
-              </p>
+                <div className="mt-6 flex flex-col gap-4">
+                    {establishments.map((item) => (
+                    <Link href={`/establishment/${item.id}`} key={item.id} className="group block">
+                        <div
+                            className="rounded-[24px] border border-black/8 bg-white/80 p-4 flex items-center gap-6 transition-all duration-300 group-hover:bg-white group-hover:shadow-lg"
+                        >
+                            <div className="relative h-24 w-24 rounded-2xl overflow-hidden">
+                                <Image src={item.image} alt={item.name} layout="fill" objectFit="cover" />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-lg font-semibold text-neutral-950">
+                                    {item.name}
+                                </p>
+                                <p className="mt-1 text-sm leading-6 text-neutral-600">
+                                    {item.category}
+                                </p>
+                            </div>
+                            <svg className="h-6 w-6 text-neutral-400 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                        </div>
+                    </Link>
+                    ))}
+                </div>
             </div>
-          </aside>
+          </section>
         </section>
-      </section>
-    </main>
+      </main>
+
+      <Modal
+        isOpen={isRechargeModalOpen}
+        onClose={() => setIsRechargeModalOpen(false)}
+        title="Recarregar Carteira"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            Digite o valor que deseja adicionar à sua carteira. O pagamento será feito via PIX.
+          </p>
+          <div>
+            <label
+              htmlFor="recharge-amount"
+              className="mb-2 block text-sm font-medium text-neutral-800"
+            >
+              Valor da Recarga (R$)
+            </label>
+            <input
+              id="recharge-amount"
+              type="number"
+              value={rechargeAmount}
+              onChange={(e) => setRechargeAmount(e.target.value)}
+              placeholder="50,00"
+              className="h-14 w-full rounded-2xl border border-black/10 bg-white px-4 text-center text-base text-neutral-950 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-neutral-400 focus:border-neutral-950/30 focus:ring-4 focus:ring-neutral-950/6"
+            />
+          </div>
+          <button
+            onClick={handleRecharge}
+            className="flex h-14 w-full items-center justify-center rounded-2xl bg-neutral-950 px-5 text-base font-semibold text-white transition hover:bg-neutral-800"
+          >
+            Confirmar Recarga
+          </button>
+        </div>
+      </Modal>
+    </>
   );
 }

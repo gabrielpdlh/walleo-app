@@ -14,7 +14,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TAP Eventos | Carteira Digital",
+  title: "Walleo Eventos | Carteira Digital",
   description:
     "Acesso inicial do frequentador para a carteira digital do evento.",
 };

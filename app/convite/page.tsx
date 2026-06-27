@@ -13,7 +13,7 @@ export default function ConvitePage() {
         <header className="flex items-center justify-between rounded-[32px] border border-black/8 bg-white/70 px-5 py-4 shadow-[0_18px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:px-7">
           <div>
             <p className="font-mono text-[0.7rem] font-medium tracking-[0.28em] text-neutral-500 uppercase">
-              TAP Eventos
+              Walleo Eventos
             </p>
             <h1 className="mt-2 text-xl font-semibold tracking-[-0.04em] sm:text-2xl">
               Codigo de convite
