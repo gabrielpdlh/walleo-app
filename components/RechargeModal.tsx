@@ -234,12 +234,12 @@ export function RechargeModal({
 
           {error && <p className="text-sm font-medium text-red-600">{error}</p>}
 
-          <button
+          {/* <button
             onClick={handleClose}
             className="flex h-12 w-full items-center justify-center rounded-2xl border border-black/10 px-5 text-sm font-semibold text-neutral-700 transition hover:bg-black/5"
           >
             Pagar depois
-          </button>
+          </button> */}
         </div>
       )}
 
