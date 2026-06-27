@@ -146,9 +146,15 @@ export default function EstablishmentPage() {
             <div className="relative">
               <button
                 onClick={() => setIsProfileDropdownOpen((prev) => !prev)}
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-black/8 bg-white/80"
+                className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-black/8 bg-white/80"
               >
-                <UserIcon className="h-6 w-6 text-neutral-700" />
+                <Image
+                  src="/eu-foto.jpeg"
+                  alt="Foto de perfil"
+                  width={48}
+                  height={48}
+                  className="h-full w-full object-cover"
+                />
               </button>
               {isProfileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-2xl border border-black/8 bg-white py-2 shadow-xl backdrop-blur-xl">

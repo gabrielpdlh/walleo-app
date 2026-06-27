@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: "Walleo Eventos | Carteira Digital",
   description:
     "Acesso inicial do frequentador para a carteira digital do evento.",
+  icons: {
+    icon: "/w-png.png",
+  },
 };
 
 export default function RootLayout({
