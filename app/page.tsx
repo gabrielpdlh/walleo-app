@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image"; // Import Next.js Image component
 
-// Re-using the same components
-import { Modal } from "@/components/ui/Modal";
+import { RechargeModal } from "@/components/RechargeModal";
+import { formatBRL } from "@/lib/money";
+import { fetchBalanceCents, getWalletId } from "@/lib/wallet-client";
 
 const establishments = [
   {
@@ -55,8 +56,8 @@ const UserIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function HomePage() {
   const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
-  const [credit, setCredit] = useState(100);
-  const [rechargeAmount, setRechargeAmount] = useState("");
+  const [balanceCents, setBalanceCents] = useState(0);
+  const [walletId, setWalletId] = useState("");
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const router = useRouter();
 
@@ -64,32 +65,19 @@ export default function HomePage() {
     const isAuthenticated = localStorage.getItem("isAuthenticated");
     if (isAuthenticated !== "true") {
       router.push("/welcome");
+      return;
     }
-    const storedCredit = localStorage.getItem('userCredit');
-    if (storedCredit) {
-        setCredit(parseFloat(storedCredit));
-    } else {
-        localStorage.setItem('userCredit', '100');
-    }
+    void (async () => {
+      const id = getWalletId();
+      const balance = await fetchBalanceCents(id);
+      setWalletId(id);
+      setBalanceCents(balance);
+    })();
   }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userCredit");
     router.push("/welcome");
-  };
-
-  const handleRecharge = () => {
-    const amount = parseFloat(rechargeAmount);
-    if (!isNaN(amount) && amount > 0) {
-      const newCredit = credit + amount;
-      setCredit(newCredit);
-      localStorage.setItem('userCredit', newCredit.toString());
-      setRechargeAmount("");
-      setIsRechargeModalOpen(false);
-    } else {
-      alert("Por favor, insira um valor válido.");
-    }
   };
 
   return (
@@ -111,7 +99,7 @@ export default function HomePage() {
                         Saldo
                     </p>
                     <p className="text-sm font-semibold text-neutral-950">
-                        R$ {credit.toFixed(2)}
+                        {formatBRL(balanceCents)}
                     </p>
                 </div>
                 <div className="relative">
@@ -199,39 +187,12 @@ export default function HomePage() {
         </section>
       </main>
 
-      <Modal
+      <RechargeModal
         isOpen={isRechargeModalOpen}
+        walletId={walletId}
         onClose={() => setIsRechargeModalOpen(false)}
-        title="Recarregar Carteira"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-600">
-            Digite o valor que deseja adicionar à sua carteira. O pagamento será feito via PIX.
-          </p>
-          <div>
-            <label
-              htmlFor="recharge-amount"
-              className="mb-2 block text-sm font-medium text-neutral-800"
-            >
-              Valor da Recarga (R$)
-            </label>
-            <input
-              id="recharge-amount"
-              type="number"
-              value={rechargeAmount}
-              onChange={(e) => setRechargeAmount(e.target.value)}
-              placeholder="50,00"
-              className="h-14 w-full rounded-2xl border border-black/10 bg-white px-4 text-center text-base text-neutral-950 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-neutral-400 focus:border-neutral-950/30 focus:ring-4 focus:ring-neutral-950/6"
-            />
-          </div>
-          <button
-            onClick={handleRecharge}
-            className="flex h-14 w-full items-center justify-center rounded-2xl bg-neutral-950 px-5 text-base font-semibold text-white transition hover:bg-neutral-800"
-          >
-            Confirmar Recarga
-          </button>
-        </div>
-      </Modal>
+        onConfirmed={(newBalanceCents) => setBalanceCents(newBalanceCents)}
+      />
     </>
   );
 }

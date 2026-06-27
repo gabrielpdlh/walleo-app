@@ -5,6 +5,9 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
+import { formatBRL, reaisToCents } from "@/lib/money";
+import { fetchBalanceCents, getWalletId, purchase } from "@/lib/wallet-client";
+
 // Mock Data
 const establishments = [
     { id: "bar-principal", name: "Bar Principal", category: "Bebidas" },
@@ -48,7 +51,9 @@ export default function EstablishmentPage() {
   const params = useParams();
   const establishmentId = params.id as string;
 
-  const [credit, setCredit] = useState(100);
+  const [balanceCents, setBalanceCents] = useState(0);
+  const [walletId, setWalletId] = useState("");
+  const [payingId, setPayingId] = useState<string | null>(null);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   const establishment = establishments.find((e) => e.id === establishmentId);
@@ -58,27 +63,37 @@ export default function EstablishmentPage() {
     const isAuthenticated = localStorage.getItem("isAuthenticated");
     if (isAuthenticated !== "true") {
       router.push("/welcome");
+      return;
     }
-    const storedCredit = localStorage.getItem('userCredit');
-    if (storedCredit) {
-        setCredit(parseFloat(storedCredit));
-    }
+    void (async () => {
+      const id = getWalletId();
+      const balance = await fetchBalanceCents(id);
+      setWalletId(id);
+      setBalanceCents(balance);
+    })();
   }, [router]);
 
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userCredit");
     router.push("/welcome");
   };
 
-  const handlePayment = (price: number) => {
-    if (credit >= price) {
-      const newCredit = credit - price;
-      setCredit(newCredit);
-      localStorage.setItem('userCredit', newCredit.toString());
+  const handlePayment = async (item: { id: string; name: string; price: number }) => {
+    if (!walletId || payingId) return;
+    setPayingId(item.id);
+    try {
+      const { balanceCents: newBalance } = await purchase({
+        walletId,
+        amountCents: reaisToCents(item.price),
+        merchantName: establishment?.name ?? "Estabelecimento",
+        itemName: item.name,
+      });
+      setBalanceCents(newBalance);
       alert("Pagamento realizado com sucesso!");
-    } else {
-      alert("Saldo insuficiente. Por favor, recarregue.");
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Falha no pagamento.");
+    } finally {
+      setPayingId(null);
     }
   };
 
@@ -111,7 +126,7 @@ export default function EstablishmentPage() {
                         Saldo
                     </p>
                     <p className="text-sm font-semibold text-neutral-950">
-                        R$ {credit.toFixed(2)}
+                        {formatBRL(balanceCents)}
                     </p>
                 </div>
                 <div className="relative">
@@ -170,11 +185,11 @@ export default function EstablishmentPage() {
                                 </p>
                             </div>
                             <button
-                                onClick={() => handlePayment(item.price)}
-                                disabled={credit < item.price}
+                                onClick={() => handlePayment(item)}
+                                disabled={balanceCents < reaisToCents(item.price) || payingId !== null}
                                 className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-neutral-950 px-5 text-base font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-40"
                             >
-                                Comprar
+                                {payingId === item.id ? "Pagando…" : "Comprar"}
                             </button>
                         </div>
                     </div>
