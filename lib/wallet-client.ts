@@ -1,28 +1,48 @@
 /**
  * Helpers de cliente (browser) para a carteira.
  *
- * A identidade da carteira da demo vive no localStorage (não há auth real ainda).
- * O SALDO, porém, é sempre lido do backend — nunca é calculado/persistido no
- * frontend, conforme o spec (saldo coerente com o ledger do servidor).
+ * A identidade da carteira vem da SESSÃO (cookie HTTP-only) — o frontend não
+ * envia mais walletId. O SALDO é sempre lido do backend (coerente com o ledger).
  */
 
-const WALLET_KEY = "walletId";
-
-export function getWalletId(): string {
-  if (typeof window === "undefined") return "";
-  let id = localStorage.getItem(WALLET_KEY);
-  if (!id) {
-    id = `wal_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
-    localStorage.setItem(WALLET_KEY, id);
-  }
-  return id;
+export interface WalletView {
+  id: string;
+  balanceCents: number;
+  reservedCents: number;
+  /** Saldo disponível para gastar = balanceCents − reservedCents. */
+  availableCents: number;
 }
 
-export async function fetchBalanceCents(walletId: string): Promise<number> {
-  const res = await fetch(`/api/wallet/${walletId}`, { cache: "no-store" });
-  if (!res.ok) return 0;
-  const data = await res.json();
-  return data.wallet?.balanceCents ?? 0;
+/** Lê a carteira da sessão (saldo, reservado e disponível). NUNCA lança. */
+export async function fetchWallet(): Promise<WalletView> {
+  const fallback: WalletView = {
+    id: "",
+    balanceCents: 0,
+    reservedCents: 0,
+    availableCents: 0,
+  };
+  try {
+    const res = await fetch("/api/wallet", { cache: "no-store" });
+    if (!res.ok) return fallback;
+    const data = await res.json();
+    const w = data.wallet ?? {};
+    const balanceCents = w.balanceCents ?? 0;
+    const reservedCents = w.reservedCents ?? 0;
+    return {
+      id: w.id ?? "",
+      balanceCents,
+      reservedCents,
+      availableCents: w.availableCents ?? balanceCents - reservedCents,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+/** Atalho: saldo DISPONÍVEL (o número exibido como "Saldo" ao cliente). */
+export async function fetchBalanceCents(): Promise<number> {
+  const { availableCents } = await fetchWallet();
+  return availableCents;
 }
 
 export interface CreateRechargeResult {
@@ -31,7 +51,6 @@ export interface CreateRechargeResult {
 }
 
 export async function createRecharge(input: {
-  walletId: string;
   amountCents: number;
   cpf: string;
   name: string;
@@ -51,30 +70,13 @@ export interface RechargeStatus {
     id: string;
     status: string;
     amountCents: number;
-    expiresAt: string;
+    expiresAt: string | null;
     confirmedAt: string | null;
   };
-  wallet: { id: string; balanceCents: number };
 }
 
 export async function fetchRechargeStatus(topUpId: string): Promise<RechargeStatus> {
   const res = await fetch(`/api/recharge/${topUpId}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Falha ao consultar recarga.");
   return res.json();
-}
-
-export async function purchase(input: {
-  walletId: string;
-  amountCents: number;
-  merchantName: string;
-  itemName: string;
-}): Promise<{ balanceCents: number }> {
-  const res = await fetch("/api/purchase", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error ?? "Falha na compra.");
-  return { balanceCents: data.wallet.balanceCents };
 }

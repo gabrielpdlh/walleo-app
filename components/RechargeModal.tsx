@@ -6,6 +6,7 @@ import { formatBRL, reaisToCents } from "@/lib/money";
 import {
   createRecharge,
   fetchRechargeStatus,
+  fetchWallet,
   type CreateRechargeResult,
 } from "@/lib/wallet-client";
 
@@ -13,7 +14,6 @@ type Step = "form" | "pix" | "success" | "failed";
 
 interface RechargeModalProps {
   isOpen: boolean;
-  walletId: string;
   onClose: () => void;
   /** Chamado quando a recarga é confirmada, com o novo saldo (em centavos). */
   onConfirmed: (newBalanceCents: number) => void;
@@ -41,7 +41,6 @@ function maskCPF(value: string): string {
 
 export function RechargeModal({
   isOpen,
-  walletId,
   onClose,
   onConfirmed,
 }: RechargeModalProps) {
@@ -54,6 +53,9 @@ export function RechargeModal({
   const [recharge, setRecharge] = useState<CreateRechargeResult | null>(null);
   const [copied, setCopied] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Marca que o modal foi fechado: bloqueia escrita de estado por um tick de
+  // polling que ainda esteja "em voo" (await) no instante do fechamento.
+  const closedRef = useRef(false);
 
   // Limpa o polling ao desmontar.
   useEffect(() => {
@@ -74,10 +76,14 @@ export function RechargeModal({
     pollRef.current = setInterval(async () => {
       try {
         const data = await fetchRechargeStatus(topUpId);
+        if (closedRef.current) return; // modal fechado durante o fetch
         const s = data.topUp.status;
         if (s === "confirmed") {
           stopPolling();
-          onConfirmed(data.wallet.balanceCents);
+          // Saldo vem da rota gateada (a de polling não expõe carteira).
+          const w = await fetchWallet();
+          if (closedRef.current) return;
+          onConfirmed(w.availableCents);
           setStep("success");
         } else if (s === "expired" || s === "failed" || s === "canceled") {
           stopPolling();
@@ -91,6 +97,7 @@ export function RechargeModal({
 
   async function handleCreate() {
     setError(null);
+    closedRef.current = false; // reabrindo o fluxo
     const amountCents = reaisToCents(parseFloat(amount.replace(",", ".")));
     if (!Number.isFinite(amountCents) || amountCents < 100) {
       setError("Informe um valor de no mínimo R$ 1,00.");
@@ -99,7 +106,6 @@ export function RechargeModal({
     setLoading(true);
     try {
       const result = await createRecharge({
-        walletId,
         amountCents,
         cpf,
         name,
@@ -127,6 +133,7 @@ export function RechargeModal({
   }
 
   function handleClose() {
+    closedRef.current = true;
     stopPolling();
     // Reseta para a próxima abertura (mantém nome/CPF por conveniência).
     setStep("form");

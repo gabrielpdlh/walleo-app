@@ -1,24 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function LoginPage() {
-  const [code, setCode] = useState("");
-  const router = useRouter();
+import {
+  customerLogin,
+  fetchCustomerSession,
+} from "@/lib/customer-client";
 
-  const handleLogin = (e: React.FormEvent) => {
+export default function LoginPage() {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [code, setCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  // Já logado? entra direto (sem piscar o formulário).
+  useEffect(() => {
+    void (async () => {
+      const s = await fetchCustomerSession();
+      if (s) {
+        router.replace("/");
+        return;
+      }
+      setChecking(false);
+    })();
+  }, [router]);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock authentication: check for a specific code
-    if (code === "1234") {
-      localStorage.setItem("isAuthenticated", "true");
-      router.push("/");
-    } else {
-      alert("Invalid code. Please try again.");
-      setCode("");
+    setLoading(true);
+    setError(null);
+    try {
+      await customerLogin(name, code);
+      router.replace("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Falha no login.");
+      setLoading(false);
     }
   };
+
+  if (checking) {
+    return (
+      <main className="grid min-h-screen place-items-center text-sm text-neutral-500">
+        Carregando…
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen text-neutral-950">
@@ -48,14 +78,32 @@ export default function LoginPage() {
                   Área interna
                 </p>
                 <h2 className="mt-3 text-2xl leading-tight font-semibold tracking-[-0.04em] text-balance sm:text-[2rem]">
-                  Digite o código para acessar sua carteira.
+                  Entre para acessar sua carteira.
                 </h2>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-white/70 sm:text-base">
-                  O código foi enviado para seu e-mail após a compra do ingresso.
+                  Use seu nome e o código de acesso do evento. Sua carteira e
+                  pedidos te acompanham em qualquer aparelho.
                 </p>
               </div>
 
               <form onSubmit={handleLogin} className="mt-6 space-y-4">
+                <div>
+                  <label
+                    htmlFor="login-name"
+                    className="mb-2 block text-sm font-medium text-neutral-800"
+                  >
+                    Seu nome
+                  </label>
+                  <input
+                    id="login-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Gabriel"
+                    autoComplete="name"
+                    className="h-14 w-full rounded-2xl border border-black/10 bg-white px-4 text-base text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-neutral-950/30 focus:ring-4 focus:ring-neutral-950/6"
+                  />
+                </div>
                 <div>
                   <label
                     htmlFor="login-code"
@@ -69,15 +117,19 @@ export default function LoginPage() {
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
                     placeholder="••••••"
+                    inputMode="numeric"
                     className="h-14 w-full rounded-2xl border border-black/10 bg-white px-4 text-center text-base uppercase tracking-[0.18em] text-neutral-950 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] outline-none transition placeholder:normal-case placeholder:tracking-normal placeholder:text-neutral-400 focus:border-neutral-950/30 focus:ring-4 focus:ring-neutral-950/6"
                   />
                 </div>
 
+                {error && <p className="text-sm font-medium text-red-600">{error}</p>}
+
                 <button
                   type="submit"
-                  className="flex h-14 w-full items-center justify-center rounded-2xl bg-neutral-950 px-5 text-base font-semibold text-white transition hover:bg-neutral-800"
+                  disabled={loading}
+                  className="flex h-14 w-full items-center justify-center rounded-2xl bg-neutral-950 px-5 text-base font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
                 >
-                  Validar e Entrar
+                  {loading ? "Entrando…" : "Validar e Entrar"}
                 </button>
               </form>
             </div>
