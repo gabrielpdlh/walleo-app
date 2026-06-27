@@ -5,39 +5,10 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
-import { formatBRL, reaisToCents } from "@/lib/money";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { formatBRL } from "@/lib/money";
 import { fetchBalanceCents, getWalletId, purchase } from "@/lib/wallet-client";
-
-// Mock Data
-const establishments = [
-    { id: "bar-principal", name: "Bar Principal", category: "Bebidas" },
-    { id: "food-truck-burgers", name: "Food Truck de Burgers", category: "Comida" },
-    { id: "palco-sunset", name: "Bar Palco Sunset", category: "Bebidas" },
-    { id: "loja-oficial", name: "Loja Oficial", category: "Produtos" },
-];
-
-const menus: { [key: string]: { id: string; name: string; price: number; image: string }[] } = {
-  "bar-principal": [
-    { id: "cerveja-pilsen", name: "Cerveja Pilsen", price: 12, image: "https://picsum.photos/seed/pilsen/400" },
-    { id: "cerveja-ipa", name: "Cerveja IPA", price: 18, image: "https://picsum.photos/seed/ipa/400" },
-    { id: "refri", name: "Refrigerante", price: 8, image: "https://picsum.photos/seed/refri/400" },
-    { id: "agua-sem-gas", name: "Água sem gás", price: 5, image: "https://picsum.photos/seed/agua/400" },
-  ],
-  "food-truck-burgers": [
-    { id: "x-burger", name: "X-Burger", price: 30, image: "https://picsum.photos/seed/burger/400" },
-    { id: "x-salada", name: "X-Salada", price: 32, image: "https://picsum.photos/seed/salada/400" },
-    { id: "fritas-simples", name: "Fritas Simples", price: 20, image: "https://picsum.photos/seed/fritas/400" },
-  ],
-  "palco-sunset": [
-    { id: "gin-tonica", name: "Gin Tônica", price: 25, image: "https://picsum.photos/seed/gin/400" },
-    { id: "caipirinha", name: "Caipirinha", price: 22, image: "https://picsum.photos/seed/caipi/400" },
-  ],
-  "loja-oficial": [
-    { id: "camiseta", name: "Camiseta Oficial", price: 80, image: "https://picsum.photos/seed/shirt/400" },
-    { id: "bone", name: "Boné Oficial", price: 50, image: "https://picsum.photos/seed/cap/400" },
-  ],
-};
-
+import { fetchMerchant, type MerchantDetail } from "@/lib/catalog-client";
 
 const UserIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -49,15 +20,14 @@ const UserIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function EstablishmentPage() {
   const router = useRouter();
   const params = useParams();
-  const establishmentId = params.id as string;
+  const slug = params.id as string;
 
   const [balanceCents, setBalanceCents] = useState(0);
   const [walletId, setWalletId] = useState("");
+  const [merchant, setMerchant] = useState<MerchantDetail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState<string | null>(null);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-
-  const establishment = establishments.find((e) => e.id === establishmentId);
-  const menu = menus[establishmentId] || [];
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem("isAuthenticated");
@@ -67,25 +37,30 @@ export default function EstablishmentPage() {
     }
     void (async () => {
       const id = getWalletId();
-      const balance = await fetchBalanceCents(id);
+      const [balance, data] = await Promise.all([
+        fetchBalanceCents(id),
+        fetchMerchant(slug).catch(() => null),
+      ]);
       setWalletId(id);
       setBalanceCents(balance);
+      setMerchant(data);
+      setLoading(false);
     })();
-  }, [router]);
+  }, [router, slug]);
 
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
     router.push("/welcome");
   };
 
-  const handlePayment = async (item: { id: string; name: string; price: number }) => {
-    if (!walletId || payingId) return;
+  const handlePayment = async (item: { id: string; name: string; priceCents: number }) => {
+    if (!walletId || payingId || !merchant) return;
     setPayingId(item.id);
     try {
       const { balanceCents: newBalance } = await purchase({
         walletId,
-        amountCents: reaisToCents(item.price),
-        merchantName: establishment?.name ?? "Estabelecimento",
+        amountCents: item.priceCents,
+        merchantName: merchant.name,
         itemName: item.name,
       });
       setBalanceCents(newBalance);
@@ -97,7 +72,7 @@ export default function EstablishmentPage() {
     }
   };
 
-  if (!establishment) {
+  if (!loading && !merchant) {
     return (
         <main className="min-h-screen text-neutral-950 grid place-items-center">
             <div className="text-center">
@@ -116,9 +91,13 @@ export default function EstablishmentPage() {
                 <Link href="/" className="font-mono text-[0.7rem] font-medium tracking-[0.28em] text-neutral-500 uppercase hover:text-neutral-800">
                     &larr; Voltar
                 </Link>
-                <h1 className="mt-2 text-xl font-semibold tracking-[-0.04em] sm:text-2xl">
-                    {establishment.name}
-                </h1>
+                {merchant ? (
+                    <h1 className="mt-2 text-xl font-semibold tracking-[-0.04em] sm:text-2xl">
+                        {merchant.name}
+                    </h1>
+                ) : (
+                    <Skeleton className="mt-2 h-7 w-48" />
+                )}
             </div>
             <div className="flex items-center gap-4">
                 <div className="rounded-2xl border border-black/10 bg-white/80 px-4 py-3 text-right">
@@ -167,33 +146,50 @@ export default function EstablishmentPage() {
                 </div>
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {menu.map((item) => (
-                    <div
-                        key={item.id}
-                        className="rounded-[24px] border border-black/8 bg-white/80 p-4 flex flex-col group"
-                    >
-                        <div className="relative h-40 w-full rounded-2xl overflow-hidden mb-4">
-                            <Image src={item.image} alt={item.name} layout="fill" objectFit="cover" className="transition-transform duration-300 group-hover:scale-105" />
-                        </div>
-                        <div className="flex-1 flex flex-col">
-                            <div>
-                                <p className="text-lg font-semibold text-neutral-950">
-                                    {item.name}
-                                </p>
-                                <p className="mt-1 text-sm leading-6 text-neutral-600">
-                                    R$ {item.price.toFixed(2)}
-                                </p>
+                    {loading ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="rounded-[24px] border border-black/8 bg-white/80 p-4">
+                                <Skeleton className="h-40 w-full" />
+                                <Skeleton className="mt-4 h-5 w-32" />
+                                <Skeleton className="mt-2 h-4 w-20" />
+                                <Skeleton className="mt-4 h-12 w-full" />
                             </div>
-                            <button
-                                onClick={() => handlePayment(item)}
-                                disabled={balanceCents < reaisToCents(item.price) || payingId !== null}
-                                className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-neutral-950 px-5 text-base font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-40"
-                            >
-                                {payingId === item.id ? "Pagando…" : "Comprar"}
-                            </button>
+                        ))
+                    ) : merchant && merchant.products.length === 0 ? (
+                        <p className="col-span-full py-8 text-center text-sm text-neutral-500">
+                            Este estabelecimento ainda não tem itens no cardápio.
+                        </p>
+                    ) : (
+                        merchant?.products.map((item) => (
+                        <div
+                            key={item.id}
+                            className="rounded-[24px] border border-black/8 bg-white/80 p-4 flex flex-col group"
+                        >
+                            <div className="relative h-40 w-full rounded-2xl overflow-hidden mb-4 bg-black/5">
+                                {item.imageUrl && (
+                                    <Image src={item.imageUrl} alt={item.name} fill className="object-cover transition-transform duration-300 group-hover:scale-105" />
+                                )}
+                            </div>
+                            <div className="flex-1 flex flex-col">
+                                <div>
+                                    <p className="text-lg font-semibold text-neutral-950">
+                                        {item.name}
+                                    </p>
+                                    <p className="mt-1 text-sm leading-6 text-neutral-600">
+                                        {formatBRL(item.priceCents)}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={() => handlePayment(item)}
+                                    disabled={balanceCents < item.priceCents || payingId !== null}
+                                    className="mt-4 flex h-12 w-full items-center justify-center rounded-2xl bg-neutral-950 px-5 text-base font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-40"
+                                >
+                                    {payingId === item.id ? "Pagando…" : "Comprar"}
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             </div>
           </section>

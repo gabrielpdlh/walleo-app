@@ -59,9 +59,11 @@ CREATE TABLE "merchant_users" (
 CREATE TABLE "merchants" (
 	"id" text PRIMARY KEY NOT NULL,
 	"event_id" text NOT NULL,
+	"slug" text NOT NULL,
 	"name" text NOT NULL,
 	"category" text,
 	"description" text,
+	"image_url" text,
 	"status" "merchant_status" DEFAULT 'active' NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -164,6 +166,7 @@ CREATE UNIQUE INDEX "ledger_idempotency_uq" ON "ledger_entries" USING btree ("re
 CREATE UNIQUE INDEX "merchant_users_email_uq" ON "merchant_users" USING btree ("email");--> statement-breakpoint
 CREATE INDEX "merchant_users_merchant_idx" ON "merchant_users" USING btree ("merchant_id");--> statement-breakpoint
 CREATE INDEX "merchants_event_idx" ON "merchants" USING btree ("event_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "merchants_slug_uq" ON "merchants" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "order_items_order_idx" ON "order_items" USING btree ("order_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "orders_qr_token_uq" ON "orders" USING btree ("qr_token");--> statement-breakpoint
 CREATE INDEX "orders_wallet_idx" ON "orders" USING btree ("wallet_id");--> statement-breakpoint

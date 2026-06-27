@@ -6,35 +6,10 @@ import Link from "next/link";
 import Image from "next/image"; // Import Next.js Image component
 
 import { RechargeModal } from "@/components/RechargeModal";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { formatBRL } from "@/lib/money";
 import { fetchBalanceCents, getWalletId } from "@/lib/wallet-client";
-
-const establishments = [
-  {
-    id: "bar-principal",
-    name: "Bar Principal",
-    category: "Bebidas",
-    image: "https://picsum.photos/seed/bar1/600/400",
-  },
-  {
-    id: "food-truck-burgers",
-    name: "Food Truck de Burgers",
-    category: "Comida",
-    image: "https://picsum.photos/seed/truck1/600/400",
-  },
-  {
-    id: "palco-sunset",
-    name: "Bar Palco Sunset",
-    category: "Bebidas",
-    image: "https://picsum.photos/seed/sunset/600/400",
-  },
-  {
-    id: "loja-oficial",
-    name: "Loja Oficial",
-    category: "Produtos",
-    image: "https://picsum.photos/seed/store1/600/400",
-  },
-];
+import { fetchMerchants, type MerchantSummary } from "@/lib/catalog-client";
 
 const UserIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -58,6 +33,8 @@ export default function HomePage() {
   const [isRechargeModalOpen, setIsRechargeModalOpen] = useState(false);
   const [balanceCents, setBalanceCents] = useState(0);
   const [walletId, setWalletId] = useState("");
+  const [merchants, setMerchants] = useState<MerchantSummary[]>([]);
+  const [loadingMerchants, setLoadingMerchants] = useState(true);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const router = useRouter();
 
@@ -69,9 +46,14 @@ export default function HomePage() {
     }
     void (async () => {
       const id = getWalletId();
-      const balance = await fetchBalanceCents(id);
+      const [balance, items] = await Promise.all([
+        fetchBalanceCents(id),
+        fetchMerchants().catch(() => []),
+      ]);
       setWalletId(id);
       setBalanceCents(balance);
+      setMerchants(items);
+      setLoadingMerchants(false);
     })();
   }, [router]);
 
@@ -161,26 +143,44 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-6 flex flex-col gap-4">
-                    {establishments.map((item) => (
-                    <Link href={`/establishment/${item.id}`} key={item.id} className="group block">
-                        <div
-                            className="rounded-[24px] border border-black/8 bg-white/80 p-4 flex items-center gap-6 transition-all duration-300 group-hover:bg-white group-hover:shadow-lg"
-                        >
-                            <div className="relative h-24 w-24 rounded-2xl overflow-hidden">
-                                <Image src={item.image} alt={item.name} layout="fill" objectFit="cover" />
+                    {loadingMerchants ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="rounded-[24px] border border-black/8 bg-white/80 p-4 flex items-center gap-6">
+                                <Skeleton className="h-24 w-24 shrink-0" />
+                                <div className="flex-1 space-y-3">
+                                    <Skeleton className="h-5 w-40" />
+                                    <Skeleton className="h-4 w-24" />
+                                </div>
                             </div>
-                            <div className="flex-1">
-                                <p className="text-lg font-semibold text-neutral-950">
-                                    {item.name}
-                                </p>
-                                <p className="mt-1 text-sm leading-6 text-neutral-600">
-                                    {item.category}
-                                </p>
+                        ))
+                    ) : merchants.length === 0 ? (
+                        <p className="py-8 text-center text-sm text-neutral-500">
+                            Nenhum estabelecimento disponível.
+                        </p>
+                    ) : (
+                        merchants.map((item) => (
+                        <Link href={`/establishment/${item.slug}`} key={item.id} className="group block">
+                            <div
+                                className="rounded-[24px] border border-black/8 bg-white/80 p-4 flex items-center gap-6 transition-all duration-300 group-hover:bg-white group-hover:shadow-lg"
+                            >
+                                <div className="relative h-24 w-24 rounded-2xl overflow-hidden bg-black/5">
+                                    {item.imageUrl && (
+                                        <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-lg font-semibold text-neutral-950">
+                                        {item.name}
+                                    </p>
+                                    <p className="mt-1 text-sm leading-6 text-neutral-600">
+                                        {item.category}
+                                    </p>
+                                </div>
+                                <svg className="h-6 w-6 text-neutral-400 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
                             </div>
-                            <svg className="h-6 w-6 text-neutral-400 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                        </div>
-                    </Link>
-                    ))}
+                        </Link>
+                        ))
+                    )}
                 </div>
             </div>
           </section>
